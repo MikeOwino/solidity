@@ -117,10 +117,8 @@ void PostTypeContractLevelChecker::checkStorageLayoutSpecifier(StorageLayoutSpec
 	}
 	solAssert(rationalType->value().denominator() == 1);
 
-	if (
-		rationalType->value().numerator() < 0 ||
-		rationalType->value().numerator() > std::numeric_limits<u256>::max()
-	)
+	bigint baseSlot = rationalType->value().numerator();
+	if (!(0 <= baseSlot && baseSlot <= std::numeric_limits<u256>::max()))
 	{
 		m_errorReporter.typeError(
 			6753_error,

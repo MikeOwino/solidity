@@ -24,6 +24,7 @@
 #include <libsolidity/ast/Types.h>
 
 #include <libsolidity/ast/AST.h>
+#include <libsolidity/ast/ASTUtils.h>
 #include <libsolidity/ast/TypeProvider.h>
 
 #include <libsolidity/analysis/ConstantEvaluator.h>
@@ -138,23 +139,23 @@ void Type::clearCache() const
 	m_stackSize.reset();
 }
 
-void StorageOffsets::computeOffsets(TypePointers const& _types)
+void StorageOffsets::computeOffsets(TypePointers const& _types, u256 _baseSlot)
 {
-	bigint slotOffset = 0;
+	bigint slotOffset = bigint(_baseSlot);
 	unsigned byteOffset = 0;
 	std::map<size_t, std::pair<u256, unsigned>> offsets;
 	for (size_t i = 0; i < _types.size(); ++i)
 	{
 		Type const* type = _types[i];
-		if (!type->canBeStored())
-			continue;
+		solAssert(type->canBeStored());
+		solAssert(type->storageBytes() <= 32);
 		if (byteOffset + type->storageBytes() > 32)
 		{
 			// would overflow, go to next slot
 			++slotOffset;
 			byteOffset = 0;
 		}
-		solAssert(slotOffset < bigint(1) << 256 ,"Object too large for storage.");
+		solAssert(slotOffset < bigint(1) << 256, "Object extends past the end of storage.");
 		offsets[i] = std::make_pair(u256(slotOffset), byteOffset);
 		solAssert(type->storageSize() >= 1, "Invalid storage size.");
 		if (type->storageSize() == 1 && byteOffset + type->storageBytes() <= 32)
@@ -167,8 +168,11 @@ void StorageOffsets::computeOffsets(TypePointers const& _types)
 	}
 	if (byteOffset > 0)
 		++slotOffset;
-	solAssert(slotOffset < bigint(1) << 256, "Object too large for storage.");
-	m_storageSize = u256(slotOffset);
+
+	solAssert(slotOffset < bigint(1) << 256, "Object extends past the end of storage.");
+	storageSize = slotOffset - _baseSlot;
+	solAssert(storageSize < bigint(1) << 256, "Object too large for storage.");
+	m_storageSize = u256(storageSize);
 	swap(m_offsets, offsets);
 }
 
@@ -2168,11 +2172,14 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 		for (VariableDeclaration const* variable: contract->stateVariables())
 			if (!(variable->isConstant() || variable->immutable()) && variable->referenceLocation() == location)
 				variables.push_back(variable);
+
 	TypePointers types;
 	for (auto variable: variables)
 		types.push_back(variable->annotation().type);
 	StorageOffsets offsets;
-	offsets.computeOffsets(types);
+	u256 layoutBase = 0;
+	layoutBase = layoutBaseForInheritanceHierarchy(m_contract, _location);
+	offsets.computeOffsets(types, layoutBase);
 
 	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
 	for (size_t index = 0; index < variables.size(); ++index)
