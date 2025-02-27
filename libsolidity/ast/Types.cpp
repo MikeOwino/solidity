@@ -170,9 +170,7 @@ void StorageOffsets::computeOffsets(TypePointers const& _types, u256 _baseSlot)
 		++slotOffset;
 
 	solAssert(slotOffset < bigint(1) << 256, "Object extends past the end of storage.");
-	storageSize = slotOffset - _baseSlot;
-	solAssert(storageSize < bigint(1) << 256, "Object too large for storage.");
-	m_storageSize = u256(storageSize);
+	m_storageSize = u256(slotOffset - _baseSlot);
 	swap(m_offsets, offsets);
 }
 
@@ -2177,9 +2175,7 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 	for (auto variable: variables)
 		types.push_back(variable->annotation().type);
 	StorageOffsets offsets;
-	u256 layoutBase = 0;
-	layoutBase = layoutBaseForInheritanceHierarchy(m_contract, _location);
-	offsets.computeOffsets(types, layoutBase);
+	offsets.computeOffsets(types, layoutBaseForInheritanceHierarchy(m_contract, _location));
 
 	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
 	for (size_t index = 0; index < variables.size(); ++index)
