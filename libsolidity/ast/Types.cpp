@@ -2150,7 +2150,7 @@ FunctionType const* ContractType::newExpressionType() const
 	return m_constructorType;
 }
 
-std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType::stateVariables(DataLocation _location) const
+std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType::linearizedStateVariables(DataLocation _location) const
 {
 	VariableDeclaration::Location location;
 	switch (_location)

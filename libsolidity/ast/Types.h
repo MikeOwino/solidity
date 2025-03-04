@@ -1005,9 +1005,12 @@ public:
 	/// Returns the function type of the constructor modified to return an object of the contract's type.
 	FunctionType const* newExpressionType() const;
 
-	/// @returns a list of all state variables (including inherited) of the contract and their
-	/// offsets in storage/transient storage.
-	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> stateVariables(DataLocation _location) const;
+	/// @returns a list of all state variables in the linearized inheritance hierarchy and
+	/// their respective slots and offsets in storage/transient storage.
+	/// It should only be called for the top level contract in order to get the absolute slots and
+	/// offsets values in storage/transient storage. Otherwise, the slots of the state variables
+	/// will be relative to the contract position in the hierarchy.
+	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> linearizedStateVariables(DataLocation _location) const;
 	/// @returns a list of all immutable variables (including inherited) of the contract.
 	std::vector<VariableDeclaration const*> immutableVariables() const;
 protected:
