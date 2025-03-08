@@ -50,7 +50,7 @@ private:
 	/// @returns true iff all checks passed. Note even if all checks passed, errors() can still contain warnings
 	bool check(ContractDefinition const& _contract);
 
-	void checkStorageLayoutSpecifier(StorageLayoutSpecifier const& _storageLayoutSpecifier);
+	void checkStorageLayoutSpecifier(ContractDefinition const& _contract);
 
 	langutil::ErrorReporter& m_errorReporter;
 };
